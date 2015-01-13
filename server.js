@@ -39,7 +39,7 @@ function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
         var games = gameRows.map(function(idx, row) {
             var gameRow = $(row);
             if (gameRow.has('td.table-content1, td.table-content2').length) {
-                return getGameInfo(gameRow);
+                return getGameInfo(gameRow, teamName);
             }
         }).get();
         
@@ -98,6 +98,7 @@ function getResult(homeScore, awayScore, isHomeTeam) {
     } else {
         result = 'Loss';
     }
+    
     return result;
 }
 
