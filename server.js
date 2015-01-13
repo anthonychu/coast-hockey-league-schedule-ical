@@ -1,38 +1,76 @@
 var cheerio = require("cheerio");
 var request = require("request");
 var moment = require("moment");
+var http = require("http");
+var ical = require("ical-generator");
+
+const DEFAULT_GAME_DURATION_IN_MINUTES = 90;
 
 // http://www.coasthockey.com/viewSchedules.aspx?TeamID=<teamid>&LeagueID=<leagueid>&SeasonID=<seasonid>
 var url = process.env.CHL_TEAM_SCHEDULE_URL;
+var port = process.env.PORT || 3000;
 
-request(url, processScheduleHtml);
-
-
-function processScheduleHtml(err, resp, html) {
-    var $ = cheerio.load(html);
-    var games = [];
-  
-    var title = $('#lblTitle').text();
-    var teamName = /schedule:(.+)/i.exec(title)[1].trim();
-  
-    var gameRows = $('#pnlViewTeamSchedules table:first-child tr');
-  
-    gameRows.map(function(idx, row) {
-        var gameRow = $(row);
-    
-        if (!gameRow.has('td.table-content1, td.table-content2').length) return;
-    
-        var cells = gameRow.find('td');
-
-        var date = moment(cells.first().text());
-        var rink = cells.eq(1).text().trim();
-        var homeTeamName = cells.eq(2).find('a').text().trim();
-        var awayTeamName = cells.eq(3).find('a').text().trim();
-        var score = parseScoreText(cells.eq(4).text().trim());
-        var result = getResult(score.home, score.away, teamName === homeTeamName)
-
-        console.log(date.toString(), rink, homeTeamName, awayTeamName, score.home, score.away, result);
+http.createServer(function(req, res) {
+    downloadSchedule(function(schedule) {
+        var cal = createICal(schedule);
+        cal.serve(res);
     });
+}).listen(port);
+
+
+
+function downloadSchedule(callback) {
+    request(url, processScheduleHtml);
+    
+    function processScheduleHtml(err, resp, html) {
+        var $ = cheerio.load(html);
+        var games = [];
+        
+        var title = $('#lblTitle').text();
+        var teamName = /schedule:(.+)/i.exec(title)[1].trim();
+        
+        var gameRows = $('#pnlViewTeamSchedules table:first-child tr');
+        
+        var games = gameRows.map(function(idx, row) {
+            var gameRow = $(row);
+            if (!gameRow.has('td.table-content1, td.table-content2').length) return;
+            
+            var gameInfo = getGameInfo(gameRow);
+            
+            return gameInfo;
+            
+            // console.log(gameInfo.date.toString(), gameInfo.rink, 
+            // gameInfo.homeTeamName, gameInfo.awayTeamName, 
+            // gameInfo.score.home, gameInfo.score.away, gameInfo.result);
+        }).get();
+        
+        var schedule = {
+            games: games,
+            title: title,
+            teamName: teamName,
+            originalUrl: url
+        };
+        
+        callback(schedule);
+    }
+}
+
+function getGameInfo(gameRow, teamName) {
+    var cells = gameRow.find('td');
+    var date = moment(cells.first().text());
+    var rink = cells.eq(1).text().trim();
+    var homeTeamName = cells.eq(2).find('a').text().trim();
+    var awayTeamName = cells.eq(3).find('a').text().trim()
+    var score = parseScoreText(cells.eq(4).text().trim());
+    
+    return {
+        date: date,
+        rink: rink,
+        homeTeamName: homeTeamName,
+        awayTeamName: awayTeamName,
+        score: score,
+        result: getResult(score.home, score.away, teamName === homeTeamName)
+    };        
 }
 
 function parseScoreText(scoreText) {
@@ -60,4 +98,38 @@ function getResult(homeScore, awayScore, isHomeTeam) {
         result = 'Loss';
     }
     return result;
+}
+
+function createICal(schedule) {
+    var cal = ical();
+    
+    cal.setDomain('anthonychu.ca').setName(schedule.title);
+    
+    schedule.games.forEach(function(game) {
+        cal.addEvent({
+            start: moment(game.date).toDate(),
+            end: moment(game.date).add(DEFAULT_GAME_DURATION_IN_MINUTES, 'm').toDate(),
+            summary: formatGameSummary(game),
+            description: '',
+            location: game.rink,
+            url: schedule.originalUrl
+        });
+    });
+    
+    return cal;
+}
+
+function formatGameSummary(game) {
+    var homeText = game.homeTeamName;
+    var awayText = game.awayTeamName;
+    
+    if (game.score.home && game.score.away) {
+        homeText += " " + game.score.home;
+        awayText += " " + game.score.away;
+    } else {
+        homeText += " (home)";
+        awayText += " (away)";
+    }
+    
+    return homeText + " - " + awayText;
 }

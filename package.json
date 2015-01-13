@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "cheerio": "^0.18.0",
+    "ical-generator": "^0.1.10",
     "moment": "^2.9.0",
     "request": "^2.51.0"
   },
