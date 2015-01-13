@@ -1,6 +1,6 @@
 var cheerio = require("cheerio");
 var request = require("request");
-var moment = require("moment");
+var moment = require("moment-timezone");
 var express = require("express");
 var ical = require("ical-generator");
 
@@ -56,7 +56,7 @@ function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
 
 function getGameInfo(gameRow, teamName) {
     var cells = gameRow.find('td');
-    var date = moment(cells.first().text(), 'dddd, MMM D, YYYY HH:mm A');
+    var date = moment.tz(cells.first().text(), 'dddd, MMM D, YYYY HH:mm A', 'America/Los_Angeles');
     var rink = cells.eq(1).text().trim();
     var homeTeamName = cells.eq(2).find('a').text().trim();
     var awayTeamName = cells.eq(3).find('a').text().trim()
