@@ -7,7 +7,6 @@ var ical = require("ical-generator");
 const DEFAULT_GAME_DURATION_IN_MINUTES = 90;
 
 var port = process.env.PORT || 3000;
-
 var app = express();
 
 app.get('/coast/:leagueid/:seasonid/:teamid', function(req, res) {
@@ -39,9 +38,9 @@ function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
         
         var games = gameRows.map(function(idx, row) {
             var gameRow = $(row);
-            if (!gameRow.has('td.table-content1, td.table-content2').length) return;
-            
-            return getGameInfo(gameRow);
+            if (gameRow.has('td.table-content1, td.table-content2').length) {
+                return getGameInfo(gameRow);
+            }
         }).get();
         
         var schedule = {
@@ -58,7 +57,6 @@ function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
 function getGameInfo(gameRow, teamName) {
     var cells = gameRow.find('td');
     var date = moment(cells.first().text(), 'dddd, MMM D, YYYY HH:mm A');
-    //Saturday, Jan 24, 2015 10:30 PM
     var rink = cells.eq(1).text().trim();
     var homeTeamName = cells.eq(2).find('a').text().trim();
     var awayTeamName = cells.eq(3).find('a').text().trim()
@@ -105,7 +103,6 @@ function getResult(homeScore, awayScore, isHomeTeam) {
 
 function createICal(schedule) {
     var cal = ical();
-    
     cal.setDomain('anthonychu.ca').setName(schedule.title);
     
     schedule.games.forEach(function(game) {
