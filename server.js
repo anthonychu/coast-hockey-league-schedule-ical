@@ -1,25 +1,31 @@
 var cheerio = require("cheerio");
 var request = require("request");
 var moment = require("moment");
-var http = require("http");
+var express = require("express");
 var ical = require("ical-generator");
 
 const DEFAULT_GAME_DURATION_IN_MINUTES = 90;
 
-// http://www.coasthockey.com/viewSchedules.aspx?TeamID=<teamid>&LeagueID=<leagueid>&SeasonID=<seasonid>
-var url = process.env.CHL_TEAM_SCHEDULE_URL;
 var port = process.env.PORT || 3000;
 
-http.createServer(function(req, res) {
-    downloadSchedule(function(schedule) {
+var app = express();
+
+app.get('/coast/:leagueid/:seasonid/:teamid', function(req, res) {
+    downloadCoastSchedule(req.params.leagueid, req.params.seasonid, req.params.teamid, function(schedule) {
         var cal = createICal(schedule);
         cal.serve(res);
     });
-}).listen(port);
+});
+
+app.listen(port);
 
 
 
-function downloadSchedule(callback) {
+
+function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
+    var url = 'http://www.coasthockey.com/viewSchedules.aspx?TeamID=' + teamId +
+        '&LeagueID=' + leagueId + '&SeasonID=' + seasonId;
+    
     request(url, processScheduleHtml);
     
     function processScheduleHtml(err, resp, html) {
@@ -35,13 +41,7 @@ function downloadSchedule(callback) {
             var gameRow = $(row);
             if (!gameRow.has('td.table-content1, td.table-content2').length) return;
             
-            var gameInfo = getGameInfo(gameRow);
-            
-            return gameInfo;
-            
-            // console.log(gameInfo.date.toString(), gameInfo.rink, 
-            // gameInfo.homeTeamName, gameInfo.awayTeamName, 
-            // gameInfo.score.home, gameInfo.score.away, gameInfo.result);
+            return getGameInfo(gameRow);
         }).get();
         
         var schedule = {
@@ -89,7 +89,9 @@ function parseScoreText(scoreText) {
 }
 
 function getResult(homeScore, awayScore, isHomeTeam) {
-    if (homeScore === awayScore) {
+    if (typeof homeScore === 'undefined') {
+        result = '';
+    } else if (homeScore === awayScore) {
         result = 'Tie';
     } else if (isHomeTeam && homeScore > awayScore ||
               !isHomeTeam && awayScore > homeScore) {
@@ -110,7 +112,7 @@ function createICal(schedule) {
             start: moment(game.date).toDate(),
             end: moment(game.date).add(DEFAULT_GAME_DURATION_IN_MINUTES, 'm').toDate(),
             summary: formatGameSummary(game),
-            description: '',
+            description: game.result,
             location: game.rink,
             url: schedule.originalUrl
         });
