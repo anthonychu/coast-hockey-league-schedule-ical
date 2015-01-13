@@ -57,7 +57,8 @@ function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
 
 function getGameInfo(gameRow, teamName) {
     var cells = gameRow.find('td');
-    var date = moment(cells.first().text());
+    var date = moment(cells.first().text(), 'dddd, MMM D, YYYY HH:mm A');
+    //Saturday, Jan 24, 2015 10:30 PM
     var rink = cells.eq(1).text().trim();
     var homeTeamName = cells.eq(2).find('a').text().trim();
     var awayTeamName = cells.eq(3).find('a').text().trim()
