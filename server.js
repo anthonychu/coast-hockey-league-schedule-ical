@@ -29,13 +29,11 @@ function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
     
     function processScheduleHtml(err, resp, html) {
         var $ = cheerio.load(html);
-        var games = [];
         
         var title = $('#lblTitle').text();
         var teamName = /schedule:(.+)/i.exec(title)[1].trim();
         
         var gameRows = $('#pnlViewTeamSchedules table:first-child tr');
-        
         var games = gameRows.map(function(idx, row) {
             var gameRow = $(row);
             if (gameRow.has('td.table-content1, td.table-content2').length) {
