@@ -4,8 +4,10 @@ var moment = require("moment-timezone");
 
 module.exports = downloadCoastSchedule;
 
+const BASE_URL = 'http://www.coasthockey.com/';
+
 function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
-    var url = 'http://www.coasthockey.com/viewSchedules.aspx?TeamID=' + teamId +
+    var url = BASE_URL + 'viewSchedules.aspx?TeamID=' + teamId +
         '&LeagueID=' + leagueId + '&SeasonID=' + seasonId;
     
     request(url, processScheduleHtml);
@@ -28,7 +30,7 @@ function downloadCoastSchedule(leagueId, seasonId, teamId, callback) {
             games: games,
             title: title,
             teamName: teamName,
-            originalUrl: url
+            url: url
         };
         
         callback(schedule);
@@ -42,7 +44,7 @@ function getGameInfo(gameRow, teamName) {
     var homeTeamName = cells.eq(2).find('a').text().trim();
     var awayTeamName = cells.eq(3).find('a').text().trim()
     var score = parseScoreText(cells.eq(4).text().trim());
-    var gameUrl = cells.last().find('a').attr('href');
+    var gameUrl = BASE_URL + cells.last().find('a').attr('href');
     var gameId = (gameUrl) ? /\d+$/.exec(gameUrl)[0] : null;
     
     return {
