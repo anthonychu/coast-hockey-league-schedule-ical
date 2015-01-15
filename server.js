@@ -27,7 +27,7 @@ function createICal(schedule) {
             start: moment(game.date).toDate(),
             end: moment(game.date).add(DEFAULT_GAME_DURATION_IN_MINUTES, 'm').toDate(),
             summary: formatGameSummary(game),
-            description: game.result + '\n' + game.gameUrl,
+            description: game.gameUrl,
             location: game.rink,
             url: game.gameUrl,
             uid: game.gameId
@@ -49,5 +49,5 @@ function formatGameSummary(game) {
         awayText += " (away)";
     }
     
-    return homeText + " - " + awayText;
+    return homeText + " - " + awayText + (game.result ? " (" + game.result + ")" : '' ) ;
 }
