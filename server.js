@@ -59,6 +59,8 @@ function getGameInfo(gameRow, teamName) {
     var homeTeamName = cells.eq(2).find('a').text().trim();
     var awayTeamName = cells.eq(3).find('a').text().trim()
     var score = parseScoreText(cells.eq(4).text().trim());
+    var gameUrl = cells.last().find('a').attr('href');
+    var gameId = (gameUrl) ? /\d+$/.exec(gameUrl)[0] : null;
     
     return {
         date: date,
@@ -66,7 +68,9 @@ function getGameInfo(gameRow, teamName) {
         homeTeamName: homeTeamName,
         awayTeamName: awayTeamName,
         score: score,
-        result: getResult(score.home, score.away, teamName === homeTeamName)
+        result: getResult(score.home, score.away, teamName === homeTeamName),
+        gameUrl: gameUrl,
+        gameId: gameId
     };        
 }
 
@@ -111,7 +115,8 @@ function createICal(schedule) {
             summary: formatGameSummary(game),
             description: game.result,
             location: game.rink,
-            url: schedule.originalUrl
+            url: game.gameUrl,
+            uid: game.gameId
         });
     });
     
