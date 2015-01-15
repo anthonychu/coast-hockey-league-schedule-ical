@@ -41,7 +41,7 @@ function formatGameSummary(game) {
     var homeText = game.homeTeamName;
     var awayText = game.awayTeamName;
     
-    if (game.score.home && game.score.away) {
+    if (typeof game.score.home !== 'undefined' && typeof game.score.away !== 'undefined') {
         homeText += " " + game.score.home;
         awayText += " " + game.score.away;
     } else {
