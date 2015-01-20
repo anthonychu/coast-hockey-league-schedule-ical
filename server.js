@@ -44,10 +44,7 @@ function formatGameSummary(game) {
     if (typeof game.score.home !== 'undefined' && typeof game.score.away !== 'undefined') {
         homeText += " " + game.score.home;
         awayText += " " + game.score.away;
-    } else {
-        homeText += " (home)";
-        awayText += " (away)";
     }
     
-    return homeText + " - " + awayText + (game.result ? " (" + game.result + ")" : '' ) ;
+    return homeText + " @ " + awayText + " (" + (game.result ? game.result : game.rink ) + ")";
 }
